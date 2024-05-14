@@ -18,13 +18,15 @@ export class AppComponent implements OnInit {
   public client = ZoomVideo.createClient()
   public stream: any;
   public sessionContainer : any;
-
+  public audioDecode : any ;
+  public audioEncode : any ;
+ 
   @ViewChild('defaultModal') defaultModal!: ElementRef;
 
   sessionData: any = {
-    sessionName: 'Cool Cars',
+    sessionName: 'Fuck',
     role: 1,
-    sessionKey: 'session123',
+    sessionKey: 'Fuck123',
     userIdentity: '',
     features: ['video', 'audio', 'settings', 'users', 'chat', 'share']
   };
@@ -44,6 +46,7 @@ export class AppComponent implements OnInit {
     this.client.on('peer-video-state-change', (payload) => {
       console.log("🚀 ~ AppComponent ~ this.client.on ~ payload:", payload)
       let participants = this.client.getAllUser()
+      console.log(participants)
       if (payload.action === 'Start') {
         // this.stream.renderVideo(
         //   document.querySelector('#participant-videos-canvas'),
@@ -67,6 +70,27 @@ export class AppComponent implements OnInit {
         // )
       }
     })
+
+    this.client.on('media-sdk-change', (payload) => {
+      console.log("media-sdk-change <----> payload", payload)
+      if (payload.type === 'audio' && payload.result === 'success') {
+        if (payload.action === 'encode') {
+          this.audioEncode = true
+        } else if (payload.action === 'decode') {
+          this.audioDecode = true
+        }
+      }
+    })
+  }
+
+  unmuteAudio(){
+    this.stream.muteAudio()
+    console.log("Mute",this.stream.muteAudio())
+  }
+
+  muteAudio(){
+    this.stream.unmuteAudio()
+    console.log("unMute",this.stream.unmuteAudio())
   }
 
   joinSession() {
@@ -82,7 +106,6 @@ export class AppComponent implements OnInit {
 
   public startMeeting() {
     this.sessionContainer = document.getElementById('sessionContainer')
-    // api to get signature
     this.getAuthSignature().then((d: any) => {
       const { sessionName, userIdentity } = this.sessionData;
       this.client
@@ -90,33 +113,11 @@ export class AppComponent implements OnInit {
         .then(() => {
           console.log("joined")
           this.stream = this.client.getMediaStream();
+          this.stream.startAudio();
           if (this.stream.isRenderSelfViewWithVideoElement()) {
             this.stream
               .startVideo({ videoElement: document.querySelector('#main-video') })
               .then(() => {
-                // thie
-                // Video successfully started and rendered
-                console.log("Video started successfully");
-                //it will add white border when video starts 
-                // $('main-video').css({
-                //   'border': '2px solid white'
-                // });
-                // stream.startAudio();
-                this.stream.startAudio()
-                this.client.on('user-added', (payload) => {
-                  console.log("🚀 ~ AppComponent ~ this.client.on ~ payload:", payload)
-                  console.log(payload[0].userId + ' joined the session');
-                  // updateUserJoinedUI(payload[0].userId);
-                });
-
-                this.client.on('active-speaker', (payload) => {
-                  console.log("🚀 ~ AppComponent ~ this.client.on ~ payload:", payload)
-                  console.log('Active speaker, use for CSS visuals', payload);
-                });
-
-                // Resolve the promise when all Zoom SDK operations are completed
-                // resolve({ this.client, this.stream });
-                // video successfully started and rendered
               })
               .catch((error: any) => {
                 console.log(error)
@@ -145,9 +146,7 @@ export class AppComponent implements OnInit {
           console.log(e)
         })
     }).catch(e => {
-
     });
-
   }
 
   async getAuthSignature() {
