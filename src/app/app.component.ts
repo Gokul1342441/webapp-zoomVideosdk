@@ -24,9 +24,9 @@ export class AppComponent implements OnInit {
   @ViewChild('defaultModal') defaultModal!: ElementRef;
 
   sessionData: any = {
-    sessionName: 'Fuck',
+    sessionName: 'thisIsNewSession',
     role: 1,
-    sessionKey: 'Fuck123',
+    sessionKey: 'thisIsNewSession123',
     userIdentity: '',
     features: ['video', 'audio', 'settings', 'users', 'chat', 'share']
   };
