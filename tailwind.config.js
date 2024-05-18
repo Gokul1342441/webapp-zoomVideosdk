@@ -7,6 +7,7 @@ module.exports = {
   theme: {
     extend: {},
   },
+  // prefix: 't-',
   plugins: [
     require('flowbite/plugin')
   ],

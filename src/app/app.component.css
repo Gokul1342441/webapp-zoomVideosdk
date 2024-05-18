@@ -1,0 +1,49 @@
+#spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.spinnerContanier {
+    width: 100%;
+    height: 100%;
+    /* background: bisque; */
+    position: absolute;
+    top: 0;
+}
+
+#participant-videos-canvas {
+    width: 100%;
+    height: auto;
+}
+
+
+#canvas-container {
+    width: 1246px;
+    height: 204px;
+    display: flex;
+    justify-content: space-between;
+    /* Ensures even spacing between canvases */
+    align-items: center;
+    /* Aligns canvases vertically within the container */
+    box-sizing: border-box;
+}
+
+canvas {
+    box-sizing: border-box;
+}
+
+
+/* 
+#main-video{
+    background-color: red;
+}
+#my-self-view-canvas{
+    background-color: greenyellow;
+}
+#participant-videos-canvas{
+    background-color: greenyellow;
+} */
