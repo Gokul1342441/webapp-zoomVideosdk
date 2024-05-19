@@ -3,9 +3,8 @@ import { OnInit } from '@angular/core';
 import { initFlowbite, Modal } from 'flowbite';
 import { HttpClient } from '@angular/common/http';
 import ZoomVideo from '@zoom/videosdk';
-import { DOCUMENT } from '@angular/common';
-import uitoolkit from '@zoom/videosdk-ui-toolkit'
-// import '@zoom/videosdk-ui-toolkit/dist/videosdk-ui-toolkit.css'
+import { DOCUMENT, DatePipe } from '@angular/common';
+import moment from 'moment-timezone';
 
 @Component({
   selector: 'app-root',
@@ -13,26 +12,24 @@ import uitoolkit from '@zoom/videosdk-ui-toolkit'
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
+  @ViewChild('defaultModal') defaultModal!: ElementRef;
   public title = 'webapp-zoomVideosdk';
   public modal !: Modal;
   public client = ZoomVideo.createClient()
   public stream: any;
-  public sessionContainer: any;
   public audioDecode: any;
   public audioEncode: any;
   public loaderSpinner: boolean = false;
-  @ViewChild('defaultModal') defaultModal!: ElementRef;
+  public Allcontainer: boolean = false;
+  public audioMuted: boolean = true;
+  public videoEnabled: boolean = true;
+  public currentTime: string | null = null;
 
-  // sessionData: any = {
-  //   sessionName: 'thisIsNewSession',
-  //   // sessionKey: 'thisIsNewSession123',
-  //   userIdentity: '',
-  // };
 
   sessionData: { sessionName: string; role: number, sessionKey: string; userIdentity: string } = {
-    sessionName: 'be108a53-3f99-4f9f-a6fd-3dacf1133bb8',
+    sessionName: '93c0482b-6cd1-44fc-bdf7-f7bd624a8f49',
     role: 1,
-    sessionKey: '967716d5-e811-4f11-96f7-4e89adb6b574',
+    sessionKey: '53c43e39-0f3f-47a9-afca-88af577b43ee',
     userIdentity: '',
   };
 
@@ -40,52 +37,33 @@ export class AppComponent implements OnInit {
   constructor(private httpClient: HttpClient, @Inject(DOCUMENT) document: any) { }
 
   ngOnInit() {
+    this.updateTime();
+    setInterval(() => this.updateTime(), 60000);
+
     const $targetEl = document.getElementById('default-modal');
     this.modal = new Modal($targetEl);
     this.modal.show();
 
-    this.client.init('en-US', 'Global', { patchJsMedia: true, enforceMultipleVideos: true, enforceVirtualBackground:true, stayAwake:true, leaveOnPageUnload:true }).then(() => {
+    this.client.init('en-US', 'Global', { patchJsMedia: true, enforceMultipleVideos: true, enforceVirtualBackground: true, stayAwake: true, leaveOnPageUnload: true }).then(() => {
       console.log("init")
     })
 
     this.client.on('peer-video-state-change', (payload) => {
       let participants = this.client.getAllUser()
-      console.log(participants)
+      console.log("🚀 ~ AppComponent ~ this.client.on ~ participants:", participants)
       if (payload.action === 'Start') {
         this.stream.renderVideo(
           document.querySelector('#participant-videos-canvas'),
-          participants[1].userId, 960, 540, 0, 540, 2)
-        this.stream.renderVideo(
-          document.querySelector('#participant-videos-canvas'),
-          participants[2].userId, 960, 540, 960, 540, 2)
-        this.stream.renderVideo(
-          document.querySelector('#participant-videos-canvas'),
-          participants[3].userId, 960, 540, 0, 0, 2)
-        this.stream.renderVideo(
-          document.querySelector('#participant-videos-canvas'),
-          participants[4].userId, 960, 540, 960, 0, 2)
+          payload.userId, 960, 540, 0, 0, 3)
       } else if (payload.action === 'Stop') {
         this.stream.stopRenderVideo(
           document.querySelector('#participant-videos-canvas'),
-          participants[1].userId
-        )
-        this.stream.stopRenderVideo(
-          document.querySelector('#participant-videos-canvas'),
-          participants[2].userId
-        )
-        this.stream.stopRenderVideo(
-          document.querySelector('#participant-videos-canvas'),
-          participants[3].userId
-        )
-        this.stream.stopRenderVideo(
-          document.querySelector('#participant-videos-canvas'),
-          participants[4].userId
+          payload.userId
         )
       }
     })
 
     this.client.on('media-sdk-change', (payload) => {
-      console.log("media-sdk-change <----> payload", payload)
       if (payload.type === 'audio' && payload.result === 'success') {
         if (payload.action === 'encode') {
           this.audioEncode = true
@@ -95,40 +73,57 @@ export class AppComponent implements OnInit {
       }
     })
 
-    this.client.on('video-active-change', (payload) => {
-      console.log('Active speaker, use for any video adjustments', payload) // new active speaker, for example, use for video rendering changes, size changes, depending on your use case.
+    this.client.on('active-speaker', (payload) => {
+      console.log('Active speaker, use for CSS visuals', payload) // new active speaker, for example, use for microphone visuals, css video border, etc.
     })
   }
 
+  updateTime() {
+    const now = moment().tz('Asia/Kolkata');
+    this.currentTime = now.format('hh:mm A');
+  }
+
+
   public startMeeting() {
     this.loaderSpinner = true;
-    console.log(this.loaderSpinner = true, "this.loaderSpinner = true")
-    this.sessionContainer = document.getElementById('sessionContainer')
     this.getAuthSignature().then((d: any) => {
       const { sessionName, userIdentity } = this.sessionData;
       this.client
         .join(sessionName, d, userIdentity)
         .then(() => {
-          console.log("joined")
           this.stream = this.client.getMediaStream();
-          this.stream.startAudio();
+          this.stream.startAudio(
+            {
+              originalSound: {
+                stereo: true,
+                hifi: true
+              }
+            }
+          );
+          this.stream.enableOriginalSound({
+            hifi: true,
+            stereo: true
+          })
           if (this.stream.isRenderSelfViewWithVideoElement()) {
+            this.loaderSpinner = false;
+            this.Allcontainer = true;
             this.stream
               .startVideo({ videoElement: document.querySelector('#main-video') })
               .then(() => {
-                this.loaderSpinner = false;
               })
               .catch((error: any) => {
                 console.log(error)
               })
           } else {
             this.stream
-              .startVideo()
+              .startVideo({ fullHd: true })
               .then(() => {
+                this.loaderSpinner = false;
+                this.Allcontainer = true;
                 this.stream
                   .renderVideo(
                     document.querySelector('#my-self-view-canvas'),
-                    this.client.getCurrentUserInfo().userId, 1920, 1080, 0, 0, 3)
+                    this.client.getCurrentUserInfo().userId, 960, 540, 0, 0, 3)
                   .then(() => {
                   })
                   .catch((error: any) => {
@@ -145,6 +140,45 @@ export class AppComponent implements OnInit {
         })
     }).catch(e => {
     });
+  }
+
+  toggleMic(): void {
+    const userId = this.client.getCurrentUserInfo().userId;
+    if (!this.audioMuted) {
+      this.audioMuted = true;
+      this.audioEncode = false;
+      this.stream.unmuteAudio(userId)
+    } else {
+      this.audioMuted = false;
+      this.audioEncode = true;
+      this.stream.muteAudio(userId)
+    }
+  }
+
+  toggleCamera(): void {
+    const userId = this.client.getCurrentUserInfo().userId;
+    if (!this.videoEnabled) {
+      console.log("Enable")
+      this.videoEnabled = true;
+      this.stream
+      .startVideo({ virtualBackground: { imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSGWw5y12t-U1F6RofF4WlpcAWZFL6G2Ua30PkxyxDsEA&s' } })
+      .then(() => {
+        this.stream.renderVideo(
+          document.querySelector('#my-self-view-canvas'),
+          userId, 960, 540, 0, 0, 3)
+      })
+    } else {
+      console.log("Disable")
+      this.videoEnabled = false;
+      this.stream
+      .stopVideo({ virtualBackground: { imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSGWw5y12t-U1F6RofF4WlpcAWZFL6G2Ua30PkxyxDsEA&s' } })
+      .then(() => {
+        this.stream.stopRenderVideo(
+          document.querySelector('#my-self-view-canvas'),
+          userId)
+      })
+    }
+
   }
 
 

@@ -7,17 +7,16 @@
     height: 100%;
 }
 
+.main-containter{
+overflow: auto;
+}
+
 .spinnerContanier {
     width: 100%;
     height: 100%;
     /* background: bisque; */
     position: absolute;
     top: 0;
-}
-
-#participant-videos-canvas {
-    width: 100%;
-    height: auto;
 }
 
 
@@ -34,6 +33,8 @@
 
 canvas {
     box-sizing: border-box;
+    border-radius: 30px;
+    /* box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px, rgb(51, 51, 51) 0px 0px 0px 3px; */
 }
 
 

@@ -5,5 +5,5 @@
 @tailwind utilities;
 
 body{
-    overflow:auto;
+    overflow:hidden;
 }
