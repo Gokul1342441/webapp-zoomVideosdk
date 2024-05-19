@@ -16,6 +16,7 @@ export class AppComponent implements OnInit {
   public title = 'webapp-zoomVideosdk';
   public modal !: Modal;
   public client = ZoomVideo.createClient()
+  public chat = this.client.getChatClient()
   public stream: any;
   public audioDecode: any;
   public audioEncode: any;
@@ -24,6 +25,7 @@ export class AppComponent implements OnInit {
   public audioMuted: boolean = true;
   public videoEnabled: boolean = true;
   public currentTime: string | null = null;
+  public chatClient: any;
 
 
   sessionData: { sessionName: string; role: number, sessionKey: string; userIdentity: string } = {
@@ -44,9 +46,26 @@ export class AppComponent implements OnInit {
     this.modal = new Modal($targetEl);
     this.modal.show();
 
-    this.client.init('en-US', 'Global', { patchJsMedia: true, enforceMultipleVideos: true, enforceVirtualBackground: true, stayAwake: true, leaveOnPageUnload: true }).then(() => {
-      console.log("init")
-    })
+    this.initializeZoom();
+
+  }
+
+  updateTime() {
+    const now = moment().tz('Asia/Kolkata');
+    this.currentTime = now.format('hh:mm A');
+  }
+
+
+  private initializeZoom() {
+    try {
+      this.client.init('en-US', 'Global', { patchJsMedia: true, enforceMultipleVideos: true, enforceVirtualBackground: true, stayAwake: true, leaveOnPageUnload: true }).then(() => {
+        console.log("init")
+      })
+      this.chatClient = this.client.getChatClient();
+      // this.setupChatListeners();
+    } catch (error) {
+      console.error('Error initializing Zoom client:', error);
+    }
 
     this.client.on('peer-video-state-change', (payload) => {
       let participants = this.client.getAllUser()
@@ -75,14 +94,19 @@ export class AppComponent implements OnInit {
 
     this.client.on('active-speaker', (payload) => {
       console.log('Active speaker, use for CSS visuals', payload) // new active speaker, for example, use for microphone visuals, css video border, etc.
+    });
+
+    this.client.on('active-share-change', (payload) => {
+      if (payload.state === 'Active') {
+        this.stream.startShareView(
+          document.querySelector('#users-screen-share-content-canvas'),
+          payload.userId
+        )
+      } else if (payload.state === 'Inactive') {
+        this.stream.stopShareView()
+      }
     })
   }
-
-  updateTime() {
-    const now = moment().tz('Asia/Kolkata');
-    this.currentTime = now.format('hh:mm A');
-  }
-
 
   public startMeeting() {
     this.loaderSpinner = true;
@@ -179,6 +203,32 @@ export class AppComponent implements OnInit {
       })
     }
 
+  }
+
+  public ShareScreentoggle(){
+    this.stream.stopShareScreen();
+  }
+
+  public ZoomShareScreen() {
+    if (this.stream.isStartShareScreenWithVideoElement()) {
+  this.stream
+    .startShareScreen(document.querySelector('#my-screen-share-content-video'))
+    .then(() => {
+      // screen share successfully started and rendered
+    })
+    .catch((error:any) => {
+      console.log(error)
+    })
+} else {
+  this.stream
+    .startShareScreen(document.querySelector('#my-screen-share-content-canvas'))
+    .then(() => {
+      // screen share successfully started and rendered
+    })
+    .catch((error:any) => {
+      console.log(error)
+    })
+}
   }
 
 

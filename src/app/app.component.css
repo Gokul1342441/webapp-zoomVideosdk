@@ -8,7 +8,12 @@
 }
 
 .main-containter{
-overflow: auto;
+overflow-x: auto;
+overflow-y: hidden;
+height: 100%;
+width: 100%;
+margin: 10px;
+padding: 20px;
 }
 
 .spinnerContanier {
